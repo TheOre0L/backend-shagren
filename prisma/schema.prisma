@@ -1,0 +1,235 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model cart {
+  id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String     @unique @db.Uuid
+  user      user       @relation(fields: [userId], references: [id])
+  cartItems cartItem[]
+}
+
+model cartItem {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cartId    String @db.Uuid
+  productId String @db.Uuid
+  quantity  Int    @default(1)
+
+  cart    cart    @relation(fields: [cartId], references: [id])
+  product product @relation(fields: [productId], references: [id])
+}
+
+model category {
+  id      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title   String    @db.VarChar
+  product product[]
+  type    type[]
+}
+
+model logs {
+  id     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userid String   @db.Uuid
+  type   String   @db.VarChar
+  date   DateTime @db.Timestamptz(6)
+  text   String   @db.VarChar
+  user   user     @relation(fields: [userid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "userId")
+}
+
+model notification {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @db.Uuid
+  type      String   @default("order")
+  text      String   @db.VarChar
+  link      String   @db.VarChar
+  status    String   @default("send")
+  orderId   String?
+  productId String?
+  title     String?
+  date      DateTime @db.Date
+  user      user     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "userId")
+}
+
+model order {
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String      @db.Uuid
+  paymentId  String?     @db.Uuid
+  deliveryId String?     @db.Uuid
+  fio        String?
+  phone      String?
+  summa      Float
+  status     String?     @default("pending")
+  user       user        @relation(fields: [userId], references: [id])
+  orderItems orderItem[]
+  createdAt  DateTime    @default(now())
+
+  payment  payment?  @relation(fields: [paymentId], references: [id]) // Связь с платежом
+  delivery delivery? @relation(fields: [deliveryId], references: [id])
+}
+
+model delivery {
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type              String
+  deliveryServiceId String
+  deliverySum       Int     @default(0)
+  city              String?
+  tariffCode        Int?
+  recipient         Json?
+  toLocation        Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order order[]
+}
+
+model payment {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  value       String
+  currency    String    @default("RUB")
+  status      String    @default("pending")
+  yooKassaId  String
+  description String    @default("Оплата заказа")
+  data        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order order[] // Связь с заказами (может быть несколько заказов на один платеж)
+}
+
+model orderItem {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId   String @db.Uuid
+  productId String @db.Uuid
+  quantity  Int    @default(1)
+
+  order   order   @relation(fields: [orderId], references: [id])
+  product product @relation(fields: [productId], references: [id])
+}
+
+model user {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  login        String         @unique(map: "12") @db.VarChar(50)
+  password     String         @db.VarChar(255)
+  email        String         @db.VarChar(255)
+  fio          String         @db.VarChar(255)
+  city         String         @db.VarChar(255)
+  view         Boolean        @default(true)
+  role         Int            @default(3)
+  telephone    String         @db.VarChar(255)
+  refreshToken String?
+  isActive     Boolean        @default(true)
+  cart         cart?
+  logs         logs[]
+  notification notification[]
+  order        order[]
+  review       review[]
+}
+
+model product {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title           String   @db.VarChar(255)
+  price           Float
+  oldPrice        Float? // Старая цена (если есть скидка)
+  description     String   @db.VarChar
+  longDescription String   @db.Text // Детальное описание
+  discount        Int? // Процент скидки
+  rating          Float    @default(0.0) // Рейтинг товара
+  reviewCount     Int      @default(0) // Количество отзывов
+  images          Json[] // Список изображений
+  thumbnails      Json[] // Превью-изображения
+  categoryid      String   @db.Uuid
+  typeid          String   @db.Uuid
+  count           Int      @default(0) // Количество на складе
+  enabled         Boolean  @default(true)
+  isNew           Boolean  @default(false) // Новый товар
+  isBestseller    Boolean  @default(false) // Хит продаж
+  sku             String? // Артикул товара
+  deliveryInfo    String? // Информация о доставке
+  features        Json[] // Особенности товара
+  dimensions      String? // Размеры товара
+  weight          String? // Вес товара
+  relatedProducts String[]
+  materialid      String   @db.Uuid
+  colors          Color[]  @relation("ProductColors") // Связь с цветами
+  reviews         review[] // Связь с отзывами
+
+  cartItems  cartItem[]
+  orderItems orderItem[]
+
+  material Material @relation(fields: [materialid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  type     type     @relation(fields: [typeid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "11")
+  category category @relation(fields: [categoryid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "12")
+}
+
+model Material {
+  id       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name     String
+  enabled  Boolean   @default(true)
+  products product[]
+}
+
+model Color {
+  id       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name     String
+  rgb      String    @default("255, 255, 255")
+  products product[] @relation("ProductColors") // Связь с продуктами
+}
+
+model review {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  productId  String   @db.Uuid
+  author     String
+  images     Json[]
+  rating     Int
+  date       DateTime
+  text       String
+  isVerified Boolean  @default(true)
+  isHomePage Boolean  @default(false)
+  product    product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user       user?    @relation(fields: [userId], references: [id])
+  userId     String?  @db.Uuid
+}
+
+model type {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String
+  products   product[]
+  category   category? @relation(fields: [categoryid], references: [id])
+  categoryid String?   @db.Uuid
+}
+
+model homePage {
+  id          Int     @id @default(autoincrement())
+  title       String? @db.VarChar(255)
+  subTitle    String? @db.VarChar(300)
+  titleAbout  String? @db.VarChar(255)
+  textAbout   String? @db.VarChar(400)
+  desctiption String? @db.VarChar
+  imageTitle  String? @db.VarChar
+  imageAbout  String? @db.VarChar
+  qrCodes     String? @db.VarChar
+  links       String? @db.VarChar
+}
+
+model Settings {
+  id             Int      @id @default(autoincrement())
+  name           String   @default("Шагрень | Магазин кожаных изделий ручной работы") @db.VarChar(255)
+  description    String   @default("Моя маленькая мастерская") @db.VarChar(400)
+  email          String?  @db.VarChar(255)
+  phone          String?  @db.VarChar(20)
+  adress         String?  @db.VarChar(255)
+  payMetods      Json[]   @default([]) @db.Json
+  apiKeyPay      String?  @db.VarChar(300)
+  idMarket       String?  @db.VarChar(200)
+  urlSuccessPay  String?  @db.VarChar(300)
+  urlCancelPay   String?  @db.VarChar(300)
+  deliveryMetods Json[]   @default([]) @db.Json
+  serviceMode    Boolean? @default(false)
+  testPayMode    Boolean? @default(true)
+}

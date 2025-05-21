@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "delivery" ALTER COLUMN "city" DROP NOT NULL,
+ALTER COLUMN "city" DROP DEFAULT;
