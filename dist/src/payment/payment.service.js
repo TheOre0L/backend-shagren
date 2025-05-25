@@ -29,6 +29,9 @@ let PaymentService = class PaymentService {
     async cancelPayment(param) {
         return await this.yookassaService.cancelPayment(param);
     }
+    async refundPayment(param) {
+        return await this.yookassaService.createRefund(param);
+    }
     async getPayments(action, param) {
         try {
             switch (action) {

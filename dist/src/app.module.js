@@ -30,6 +30,7 @@ const category_product_module_1 = require("./category-product/category-product.m
 const platform_express_1 = require("@nestjs/platform-express");
 const multer_1 = require("multer");
 const notification_module_1 = require("./notification/notification.module");
+const user_service_1 = require("./user/user.service");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -109,7 +110,7 @@ exports.AppModule = AppModule = __decorate([
             notification_module_1.NotificationModule,
         ],
         controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService, reviews_service_1.ReviewsService],
+        providers: [app_service_1.AppService, reviews_service_1.ReviewsService, user_service_1.UserService],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

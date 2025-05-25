@@ -9,13 +9,13 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateUserDto = exports.CreateUserDto = void 0;
+exports.RegistrationDTO = exports.LoginDTO = exports.UpdateUserDto = exports.CreateUserDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 class CreateUserDto {
-    name;
+    fio;
     password;
-    phone;
+    telephone;
     email;
     role;
     isActive;
@@ -32,7 +32,7 @@ __decorate([
     (0, class_validator_1.Length)(2, 100, { message: 'ФИО должно содержать от 2 до 100 символов.' }),
     (0, class_validator_1.IsNotEmpty)({ message: 'Указываемое значение не должно быть пустым.' }),
     __metadata("design:type", String)
-], CreateUserDto.prototype, "name", void 0);
+], CreateUserDto.prototype, "fio", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Пароль пользователя',
@@ -59,7 +59,7 @@ __decorate([
     }),
     (0, class_validator_1.IsNotEmpty)({ message: 'Указываемое значение не должно быть пустым.' }),
     __metadata("design:type", String)
-], CreateUserDto.prototype, "phone", void 0);
+], CreateUserDto.prototype, "telephone", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'E-mail пользователя',
@@ -94,4 +94,102 @@ __decorate([
 class UpdateUserDto extends (0, swagger_1.PartialType)(CreateUserDto) {
 }
 exports.UpdateUserDto = UpdateUserDto;
+class LoginDTO {
+    email;
+    password;
+}
+exports.LoginDTO = LoginDTO;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'E-mail пользователя',
+        example: 'example@example.com',
+        type: 'string',
+    }),
+    (0, class_validator_1.IsString)({ message: 'Введённое значение не является строкой.' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Указываемое значение не должно быть пустым.' }),
+    (0, class_validator_1.IsEmail)({}, { message: 'Указанное значение не является адресом электронной почты.' }),
+    __metadata("design:type", String)
+], LoginDTO.prototype, "email", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Пароль пользователя',
+        required: true,
+        example: 'Qwerty123@',
+        type: 'string',
+    }),
+    (0, class_validator_1.IsString)({ message: 'Введённое значение не является строкой.' }),
+    (0, class_validator_1.Length)(6, 32, {
+        message: 'Длина пароля должна быть не меньше 6 и не больше 32 символов.',
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Указываемое значение не должно быть пустым.' }),
+    __metadata("design:type", String)
+], LoginDTO.prototype, "password", void 0);
+class RegistrationDTO {
+    fio;
+    password;
+    telephone;
+    email;
+    city;
+}
+exports.RegistrationDTO = RegistrationDTO;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'ФИО пользователя',
+        required: true,
+        example: 'Петров Пётр Петрович',
+        type: 'string',
+    }),
+    (0, class_validator_1.IsString)({ message: 'Введённое значение не является строкой.' }),
+    (0, class_validator_1.Length)(2, 100, { message: 'ФИО должно содержать от 2 до 100 символов.' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Указываемое значение не должно быть пустым.' }),
+    __metadata("design:type", String)
+], RegistrationDTO.prototype, "fio", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Пароль пользователя',
+        required: true,
+        example: 'Qwerty123@',
+        type: 'string',
+    }),
+    (0, class_validator_1.IsString)({ message: 'Введённое значение не является строкой.' }),
+    (0, class_validator_1.Length)(6, 32, {
+        message: 'Длина пароля должна быть не меньше 6 и не больше 32 символов.',
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Указываемое значение не должно быть пустым.' }),
+    __metadata("design:type", String)
+], RegistrationDTO.prototype, "password", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Номер телефона пользователя',
+        required: true,
+        example: '+79283000001',
+        type: 'string',
+    }),
+    (0, class_validator_1.IsPhoneNumber)('RU', {
+        message: 'Номер телефона должен соответсвовать формату - +79283000001',
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Указываемое значение не должно быть пустым.' }),
+    __metadata("design:type", String)
+], RegistrationDTO.prototype, "telephone", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'E-mail пользователя',
+        example: 'example@example.com',
+        type: 'string',
+    }),
+    (0, class_validator_1.IsString)({ message: 'Введённое значение не является строкой.' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Указываемое значение не должно быть пустым.' }),
+    (0, class_validator_1.IsEmail)({}, { message: 'Указанное значение не является адресом электронной почты.' }),
+    __metadata("design:type", String)
+], RegistrationDTO.prototype, "email", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Город пользователя',
+        example: 'Москва',
+        type: 'string',
+    }),
+    (0, class_validator_1.IsString)({ message: 'Введённое значение не является строкой.' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Указываемое значение не должно быть пустым.' }),
+    __metadata("design:type", String)
+], RegistrationDTO.prototype, "city", void 0);
 //# sourceMappingURL=user.dto.js.map

@@ -27,6 +27,9 @@ let NotificationController = class NotificationController {
     async getNotificationCount(req) {
         return this.notificationService.getCount(req.user.userId);
     }
+    async delete(req, id) {
+        return this.notificationService.delete(req.user.userId, id || '');
+    }
 };
 exports.NotificationController = NotificationController;
 __decorate([
@@ -47,6 +50,15 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], NotificationController.prototype, "getNotificationCount", null);
+__decorate([
+    (0, common_1.Delete)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.AccessTokenGuard),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], NotificationController.prototype, "delete", null);
 exports.NotificationController = NotificationController = __decorate([
     (0, common_1.Controller)('notification'),
     __metadata("design:paramtypes", [notification_service_1.NotificationService])

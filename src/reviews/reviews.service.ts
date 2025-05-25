@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
@@ -23,10 +24,11 @@ export class ReviewsService {
     try {
       const user = await this.prisma.user.findUnique({ where: { id } });
 
-      const data: Prisma.reviewCreateInput = {
+      const data: any = {
         ...reviewCreateDto,
         author: user?.fio || 'Аноним',
         date: new Date().toISOString(),
+        userId: id,
       };
 
       // Создаём отзыв
@@ -86,22 +88,23 @@ export class ReviewsService {
   }
 
   async get(filter: ReviewsFilterDto) {
-    const { productId, page, limit } = filter;
-
-    if (!productId || typeof productId !== 'string') {
-      throw new NotFoundException(
-        'У этого товара отсутвуют отзывы или товар не существует',
-      );
-    }
+    const { productId, page = 1, limit = 10 } = filter;
     const offset = (page - 1) * limit;
+
+    const where: Prisma.reviewWhereInput = {};
+    if (productId && typeof productId === 'string') {
+      where.productId = productId;
+    }
+
     const [reviews, total] = await Promise.all([
-      await this.prisma.review.findMany({
-        where: { productId },
+      this.prisma.review.findMany({
+        where,
         skip: offset,
         take: limit,
       }),
-      this.prisma.review.count({ where: { productId } }),
+      this.prisma.review.count({ where }),
     ]);
+
     return {
       reviews,
       total,

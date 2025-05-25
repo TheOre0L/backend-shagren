@@ -22,6 +22,10 @@ export class PaymentService {
     return await this.yookassaService.cancelPayment(param);
   }
 
+  async refundPayment(param: PaymentTypes.RefundCreateRequest) {
+    return await this.yookassaService.createRefund(param);
+  }
+
   async getPayments(action: string, param: PaymentTypes.PaymentGetRequest) {
     try {
       switch (action) {

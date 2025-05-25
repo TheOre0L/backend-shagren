@@ -23,8 +23,21 @@ export class NotificationService {
     return this.prisma.notification.findMany({ where: { userId } });
   }
 
-  public async delete(id: string, userId: string) {
-    await this.prisma.notification.delete({ where: { id, userId } });
+  public async delete(userId: string, id?: string) {
+    console.log("11111 ++++" + id);
+    if (id && id.length > 0) {
+      await this.prisma.notification.delete({
+        where: {
+          id,
+        },
+      });
+    } else {
+      await this.prisma.notification.deleteMany({
+        where: {
+          userId,
+        },
+      });
+    }
     return this.prisma.notification.findMany({ where: { userId } });
   }
 

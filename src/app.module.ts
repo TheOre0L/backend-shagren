@@ -23,6 +23,7 @@ import { CategoryProductModule } from './category-product/category-product.modul
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { NotificationModule } from './notification/notification.module';
+import { UserService } from './user/user.service';
 
 @Module({
   imports: [
@@ -99,6 +100,6 @@ import { NotificationModule } from './notification/notification.module';
     NotificationModule,
   ],
   controllers: [AppController],
-  providers: [AppService, ReviewsService],
+  providers: [AppService, ReviewsService, UserService],
 })
 export class AppModule {}

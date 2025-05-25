@@ -1,5 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import * as argon2 from 'argon2';
 import * as ms from 'ms';
 import { JwtService } from '@nestjs/jwt';
@@ -8,6 +13,9 @@ import { Response } from 'express';
 import { user } from '@prisma/client';
 
 import { UserService } from '../user/user.service';
+import { LoginDTO, RegistrationDTO } from 'src/user/dto';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { RecoverPasswordDto } from 'src/app.controller';
 
 @Injectable()
 export class AuthService {
@@ -27,7 +35,6 @@ export class AuthService {
    */
   async validateUser(email: string, password: string) {
     const user = await this.userService.findByEmailWithCreds(email);
-    console.log(user);
     if (user && (await argon2.verify(user.password, password))) {
       return user;
     }
@@ -35,15 +42,36 @@ export class AuthService {
     return null;
   }
 
-  async regist(userdto: any) {
-    const user = await this.userService.create(userdto);
-    const tokens = await this.getTokens(user);
-    await this._updateRefreshToken(user.id, tokens.refreshToken);
+  async regist(userdto: RegistrationDTO) {
+    try {
+      const user = await this.userService.create(userdto);
+      const tokens = await this.getTokens(user);
+      await this._updateRefreshToken(user.id, tokens.refreshToken);
 
-    return tokens;
+      return tokens;
+    } catch (e) {
+      if (e instanceof BadRequestException) {
+        // Ошибка уже подготовлена — просто перекидываем дальше
+        throw e;
+      }
+
+      if (e instanceof PrismaClientKnownRequestError && e.code === 'P2002') {
+        const fields = Array.isArray(e.meta?.target)
+          ? (e.meta.target as string[]).join(', ')
+          : String(e.meta?.target);
+        throw new BadRequestException(
+          `Пользователь с таким(и) полем(ями) «${fields}» уже существует`,
+        );
+      }
+
+      console.error(e);
+      throw new InternalServerErrorException(
+        'Произошла непредвиденная ошибка при регистрации',
+      );
+    }
   }
 
-  async login(user: user, login: any) {
+  async login(user: user, login: LoginDTO) {
     const User = await this.validateUser(login.email, login.password);
     const tokens = await this.getTokens(User as user);
     await this._updateRefreshToken((User as user).id, tokens.refreshToken);
@@ -97,7 +125,21 @@ export class AuthService {
     const tokens = await this.getTokens(user);
     await this._updateRefreshToken(user.id, tokens.refreshToken);
 
-    return tokens;
+    return { tokens, accept: user.role === 1 || user.role === 0 };
+  }
+
+  async recoverPas(user: user, _data: RecoverPasswordDto) {
+    if (_data.newpas.length < 6) {
+      throw new BadRequestException(`Слишком короткий пароль`);
+    }
+    const User = await this.userService.findByIdWithPas(user.id);
+    console.log(User, _data, '_________________________________');
+    if (User && (await argon2.verify(User.password, _data.pas))) {
+      const hash = await argon2.hash(_data.newpas);
+      return this.userService.updateUser(User.id, { password: hash });
+    } else {
+      throw new BadRequestException(`Текущий пароль не верный`);
+    }
   }
 
   setRefreshTokenCookie(res: Response, refreshToken: string): void {
@@ -132,7 +174,8 @@ export class AuthService {
     console.log('????????????????', a, userId, refreshToken);
   }
 
-  public async getProfile(user: any) {
-    return this.userService.findById(user.id);
+  public async getProfile(user: string) {
+    console.table(await this.userService.findById(user));
+    return await this.userService.findById(user);
   }
 }

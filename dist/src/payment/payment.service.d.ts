@@ -8,6 +8,7 @@ export declare class PaymentService {
     createPayment(param: PaymentTypes.PaymentCreateRequest): Promise<PaymentTypes.PaymentDetails>;
     acceptPayment(param: string): Promise<PaymentTypes.PaymentDetails>;
     cancelPayment(param: string): Promise<PaymentTypes.PaymentDetails>;
+    refundPayment(param: PaymentTypes.RefundCreateRequest): Promise<PaymentTypes.RefundDetails>;
     getPayments(action: string, param: PaymentTypes.PaymentGetRequest): Promise<PaymentTypes.PaymentDetails | PaymentTypes.PaymentDetails[]>;
     refundPay(action: string, refundId?: string, body?: {
         paymentId: string;

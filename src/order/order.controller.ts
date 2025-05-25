@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Patch,
   Post,
   Query,
   Req,
@@ -45,6 +46,13 @@ export class OrderController {
     },
   ) {
     return this.orderService.getOrders();
+  }
+  @Patch()
+  editOrder(
+    @Query('orderId') orderId: string,
+    @Query('status') status: string,
+  ) {
+    return this.orderService.updateOrder(orderId, status);
   }
 
   // Отменить заказ

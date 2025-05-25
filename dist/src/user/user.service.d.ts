@@ -5,7 +5,6 @@ export declare class UserService {
     constructor(prismaService: PrismaService);
     create(user: Prisma.userCreateInput): Promise<{
         id: string;
-        login: string;
         password: string;
         email: string;
         fio: string;
@@ -19,6 +18,11 @@ export declare class UserService {
     update(id: string, refreshToken: string | undefined): Promise<user>;
     delete(id: string): Promise<user>;
     findById(id: string): Promise<user>;
+    updateUser(id: string, data: any): Promise<user>;
+    findByIdWithPas(id: string): Promise<{
+        password: string;
+        id: string;
+    }>;
     findByIdWithCreds(id: string): Promise<user>;
     findByEmail(email: string): Promise<user>;
     findByEmailWithCreds(email: string): Promise<user>;

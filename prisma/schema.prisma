@@ -114,9 +114,8 @@ model orderItem {
 
 model user {
   id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  login        String         @unique(map: "12") @db.VarChar(50)
   password     String         @db.VarChar(255)
-  email        String         @db.VarChar(255)
+  email        String         @unique
   fio          String         @db.VarChar(255)
   city         String         @db.VarChar(255)
   view         Boolean        @default(true)

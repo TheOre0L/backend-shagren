@@ -27,6 +27,9 @@ let OrderController = class OrderController {
     getOrders(req) {
         return this.orderService.getOrders();
     }
+    editOrder(orderId, status) {
+        return this.orderService.updateOrder(orderId, status);
+    }
     cancelOrder(orderId) {
         return this.orderService.cancelOrder(orderId);
     }
@@ -53,6 +56,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], OrderController.prototype, "getOrders", null);
+__decorate([
+    (0, common_1.Patch)(),
+    __param(0, (0, common_1.Query)('orderId')),
+    __param(1, (0, common_1.Query)('status')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], OrderController.prototype, "editOrder", null);
 __decorate([
     (0, common_1.Delete)(),
     __param(0, (0, common_1.Query)('orderId')),

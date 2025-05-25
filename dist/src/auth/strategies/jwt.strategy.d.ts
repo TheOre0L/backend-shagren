@@ -4,7 +4,7 @@ import { Request } from 'express';
 import { AuthService } from '../auth.service';
 import { JwtPayload } from '../types/jwt.interface';
 export declare const extractRefreshTokenFromCookies: (req: Request) => string | null;
-declare const AccessTokenStrategy_base: new (...args: [opt: import("passport-jwt").StrategyOptionsWithoutRequest] | [opt: import("passport-jwt").StrategyOptionsWithRequest]) => Strategy & {
+declare const AccessTokenStrategy_base: new (...args: [opt: import("passport-jwt").StrategyOptionsWithRequest] | [opt: import("passport-jwt").StrategyOptionsWithoutRequest]) => Strategy & {
     validate(...args: any[]): unknown;
 };
 export declare class AccessTokenStrategy extends AccessTokenStrategy_base {
@@ -17,7 +17,7 @@ export declare class AccessTokenStrategy extends AccessTokenStrategy_base {
         role: string;
     }>;
 }
-declare const RefreshTokenStrategy_base: new (...args: [opt: import("passport-jwt").StrategyOptionsWithoutRequest] | [opt: import("passport-jwt").StrategyOptionsWithRequest]) => Strategy & {
+declare const RefreshTokenStrategy_base: new (...args: [opt: import("passport-jwt").StrategyOptionsWithRequest] | [opt: import("passport-jwt").StrategyOptionsWithoutRequest]) => Strategy & {
     validate(...args: any[]): unknown;
 };
 export declare class RefreshTokenStrategy extends RefreshTokenStrategy_base {

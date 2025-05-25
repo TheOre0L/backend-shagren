@@ -40,11 +40,26 @@ let ProductController = class ProductController {
     colorCreate(colorCreateDTO) {
         return this.prisma.color.create({ data: colorCreateDTO });
     }
+    colorEdit(colorCreateDTO, id) {
+        return this.prisma.color.update({
+            where: { id: id },
+            data: colorCreateDTO,
+        });
+    }
     colorGet() {
         return this.prisma.color.findMany();
     }
     materialGet() {
         return this.prisma.material.findMany();
+    }
+    materialPost(data) {
+        return this.prisma.material.create({ data: data });
+    }
+    materialEdit(data, materialId) {
+        return this.prisma.material.update({
+            where: { id: materialId },
+            data: data,
+        });
     }
 };
 exports.ProductController = ProductController;
@@ -85,6 +100,14 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ProductController.prototype, "colorCreate", null);
 __decorate([
+    (0, common_1.Patch)('color-edit'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Query)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], ProductController.prototype, "colorEdit", null);
+__decorate([
     (0, common_1.Get)('color'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -96,6 +119,21 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], ProductController.prototype, "materialGet", null);
+__decorate([
+    (0, common_1.Post)('material-add'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], ProductController.prototype, "materialPost", null);
+__decorate([
+    (0, common_1.Patch)('material-edit'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Query)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], ProductController.prototype, "materialEdit", null);
 exports.ProductController = ProductController = __decorate([
     (0, common_1.Controller)('products'),
     __metadata("design:paramtypes", [product_service_1.ProductService,

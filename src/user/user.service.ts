@@ -53,7 +53,7 @@ export class UserService {
 
   async findById(id: string): Promise<user> {
     const findUser = await this.prismaService.user.findFirstOrThrow({
-      where: { id },
+      where: { id: id },
       include: {
         order: {
           orderBy: { createdAt: 'desc' }, // Сортируем от новых к старым
@@ -78,6 +78,28 @@ export class UserService {
         },
         review: true,
       },
+    });
+    console.log(id + 'fffffffffffff');
+    console.table(findUser);
+    return findUser;
+  }
+
+  async updateUser(id: string, data: any): Promise<user> {
+    const user = await this.prismaService.user.findFirstOrThrow({
+      where: { id },
+    });
+    if (!user) throw new Error('User not found');
+    const update = await this.prismaService.user.update({
+      where: { id },
+      data,
+    });
+    return update;
+  }
+
+  async findByIdWithPas(id: string): Promise<{ password: string; id: string }> {
+    const findUser = await this.prismaService.user.findFirstOrThrow({
+      where: { id },
+      select: { password: true, id: true },
     });
 
     return findUser;
@@ -105,7 +127,7 @@ export class UserService {
 
   async findByEmailWithCreds(email: string): Promise<user> {
     const findUser = await this.prismaService.user.findFirstOrThrow({
-      where: { email },
+      where: { email: email },
       omit: {
         password: false,
         refreshToken: false,

@@ -1,3 +1,0 @@
-# npm test
-echo "Проверка линтером..."
-npm run lint

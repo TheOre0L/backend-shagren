@@ -1,5 +1,5 @@
 export declare class ReviewsFilterDto {
-    productId: number;
+    productId?: string;
     page: number;
     limit: number;
 }

@@ -2,6 +2,7 @@ import { ProductService } from './product.service';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { FilterProduct } from './dto/product.filter';
+import { UUID } from 'crypto';
 export declare class ProductController {
     private readonly productService;
     private prisma;
@@ -293,6 +294,14 @@ export declare class ProductController {
         name: string;
         rgb: string;
     }, never, import("@prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
+    colorEdit(colorCreateDTO: {
+        name: string;
+        rgb: string;
+    }, id: UUID): Prisma.Prisma__ColorClient<{
+        id: string;
+        name: string;
+        rgb: string;
+    }, never, import("@prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
     colorGet(): Prisma.PrismaPromise<{
         id: string;
         name: string;
@@ -303,4 +312,20 @@ export declare class ProductController {
         name: string;
         enabled: boolean;
     }[]>;
+    materialPost(data: {
+        name: string;
+        enabled: boolean;
+    }): Prisma.Prisma__MaterialClient<{
+        id: string;
+        name: string;
+        enabled: boolean;
+    }, never, import("@prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
+    materialEdit(data: {
+        name: string;
+        enabled: boolean;
+    }, materialId: UUID): Prisma.Prisma__MaterialClient<{
+        id: string;
+        name: string;
+        enabled: boolean;
+    }, never, import("@prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
 }

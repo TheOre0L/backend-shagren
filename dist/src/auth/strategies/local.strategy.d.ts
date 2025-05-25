@@ -10,7 +10,6 @@ export declare class LocalStrategy extends LocalStrategy_base {
     constructor(moduleRef: ModuleRef);
     validate(request: Request, email: string, password: string): Promise<{
         id: string;
-        login: string;
         password: string;
         email: string;
         fio: string;

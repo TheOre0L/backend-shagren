@@ -30,4 +30,20 @@ export declare class NotificationController {
         notificationCount: number;
         cartItemsCount: number;
     }>;
+    delete(req: Request & {
+        user: {
+            userId: string;
+        };
+    }, id?: string): Promise<{
+        id: string;
+        userId: string;
+        link: string;
+        type: string;
+        date: Date;
+        text: string;
+        status: string;
+        orderId: string | null;
+        productId: string | null;
+        title: string | null;
+    }[]>;
 }

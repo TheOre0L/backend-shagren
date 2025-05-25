@@ -16,10 +16,13 @@ exports.ShoppingCartController = void 0;
 const common_1 = require("@nestjs/common");
 const shopping_card_service_1 = require("./shopping-card.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const nestjs_prisma_1 = require("nestjs-prisma");
 let ShoppingCartController = class ShoppingCartController {
     shoppingCartService;
-    constructor(shoppingCartService) {
+    prisma;
+    constructor(shoppingCartService, prisma) {
         this.shoppingCartService = shoppingCartService;
+        this.prisma = prisma;
     }
     addItem(req, productId, quantity = 1) {
         return this.shoppingCartService.addProductToCart(req.user.userId, productId, quantity);
@@ -32,6 +35,35 @@ let ShoppingCartController = class ShoppingCartController {
     }
     clearCart(req) {
         return this.shoppingCartService.clearCart(req.user.userId);
+    }
+    async incDec(req, id, count) {
+        const cart = await this.prisma.cart.findUnique({
+            where: { userId: req.user.userId },
+        });
+        if (!cart) {
+            throw new Error('Cart not found');
+        }
+        if (count === 0) {
+            await this.prisma.cartItem.deleteMany({
+                where: {
+                    cartId: cart.id,
+                    productId: id,
+                },
+            });
+        }
+        await this.prisma.cartItem.updateMany({
+            where: {
+                cartId: cart.id,
+                productId: id,
+            },
+            data: {
+                quantity: count,
+            },
+        });
+        return await this.prisma.cart.findUnique({
+            where: { userId: req.user.userId },
+            include: { cartItems: { include: { product: true } } },
+        });
     }
 };
 exports.ShoppingCartController = ShoppingCartController;
@@ -70,8 +102,19 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], ShoppingCartController.prototype, "clearCart", null);
+__decorate([
+    (0, common_1.Get)('count'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.AccessTokenGuard),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)('item')),
+    __param(2, (0, common_1.Query)('count')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Number]),
+    __metadata("design:returntype", Promise)
+], ShoppingCartController.prototype, "incDec", null);
 exports.ShoppingCartController = ShoppingCartController = __decorate([
     (0, common_1.Controller)('shopping-cart'),
-    __metadata("design:paramtypes", [shopping_card_service_1.ShoppingCardService])
+    __metadata("design:paramtypes", [shopping_card_service_1.ShoppingCardService,
+        nestjs_prisma_1.PrismaService])
 ], ShoppingCartController);
 //# sourceMappingURL=shopping-card.controller.js.map

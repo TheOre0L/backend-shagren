@@ -19,8 +19,12 @@ export declare class CategoryProductService {
     get(action: 'all' | 'one', categoryId?: UUID): Promise<{
         id: string;
         title: string;
-    } | {
+    } | ({
+        product: {
+            images: Prisma.JsonValue[];
+        }[];
+    } & {
         id: string;
         title: string;
-    }[]>;
+    })[]>;
 }

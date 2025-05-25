@@ -16,6 +16,7 @@ const ms = require("ms");
 const jwt_1 = require("@nestjs/jwt");
 const config_1 = require("@nestjs/config");
 const user_service_1 = require("../user/user.service");
+const library_1 = require("@prisma/client/runtime/library");
 let AuthService = class AuthService {
     jwtService;
     userService;
@@ -27,17 +28,31 @@ let AuthService = class AuthService {
     }
     async validateUser(email, password) {
         const user = await this.userService.findByEmailWithCreds(email);
-        console.log(user);
         if (user && (await argon2.verify(user.password, password))) {
             return user;
         }
         return null;
     }
     async regist(userdto) {
-        const user = await this.userService.create(userdto);
-        const tokens = await this.getTokens(user);
-        await this._updateRefreshToken(user.id, tokens.refreshToken);
-        return tokens;
+        try {
+            const user = await this.userService.create(userdto);
+            const tokens = await this.getTokens(user);
+            await this._updateRefreshToken(user.id, tokens.refreshToken);
+            return tokens;
+        }
+        catch (e) {
+            if (e instanceof common_1.BadRequestException) {
+                throw e;
+            }
+            if (e instanceof library_1.PrismaClientKnownRequestError && e.code === 'P2002') {
+                const fields = Array.isArray(e.meta?.target)
+                    ? e.meta.target.join(', ')
+                    : String(e.meta?.target);
+                throw new common_1.BadRequestException(`Пользователь с таким(и) полем(ями) «${fields}» уже существует`);
+            }
+            console.error(e);
+            throw new common_1.InternalServerErrorException('Произошла непредвиденная ошибка при регистрации');
+        }
     }
     async login(user, login) {
         const User = await this.validateUser(login.email, login.password);
@@ -79,7 +94,21 @@ let AuthService = class AuthService {
         }
         const tokens = await this.getTokens(user);
         await this._updateRefreshToken(user.id, tokens.refreshToken);
-        return tokens;
+        return { tokens, accept: user.role === 1 || user.role === 0 };
+    }
+    async recoverPas(user, _data) {
+        if (_data.newpas.length < 6) {
+            throw new common_1.BadRequestException(`Слишком короткий пароль`);
+        }
+        const User = await this.userService.findByIdWithPas(user.id);
+        console.log(User, _data, '_________________________________');
+        if (User && (await argon2.verify(User.password, _data.pas))) {
+            const hash = await argon2.hash(_data.newpas);
+            return this.userService.updateUser(User.id, { password: hash });
+        }
+        else {
+            throw new common_1.BadRequestException(`Текущий пароль не верный`);
+        }
     }
     setRefreshTokenCookie(res, refreshToken) {
         console.log('✅ Устанавливаем refreshToken:', refreshToken);
@@ -102,7 +131,8 @@ let AuthService = class AuthService {
         console.log('????????????????', a, userId, refreshToken);
     }
     async getProfile(user) {
-        return this.userService.findById(user.id);
+        console.table(await this.userService.findById(user));
+        return await this.userService.findById(user);
     }
 };
 exports.AuthService = AuthService;

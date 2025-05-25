@@ -27,7 +27,7 @@ export declare class NotificationService {
         productId: string | null;
         title: string | null;
     }[]>;
-    delete(id: string, userId: string): Promise<{
+    delete(userId: string, id?: string): Promise<{
         id: string;
         userId: string;
         link: string;

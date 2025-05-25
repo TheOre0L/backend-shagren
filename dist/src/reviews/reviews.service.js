@@ -24,6 +24,7 @@ let ReviewsService = class ReviewsService {
                 ...reviewCreateDto,
                 author: user?.fio || 'Аноним',
                 date: new Date().toISOString(),
+                userId: id,
             };
             const review = await this.prisma.review.create({ data });
             const product = await this.prisma.product.findUnique({
@@ -71,18 +72,19 @@ let ReviewsService = class ReviewsService {
         return removedReview;
     }
     async get(filter) {
-        const { productId, page, limit } = filter;
-        if (!productId || typeof productId !== 'string') {
-            throw new common_1.NotFoundException('У этого товара отсутвуют отзывы или товар не существует');
-        }
+        const { productId, page = 1, limit = 10 } = filter;
         const offset = (page - 1) * limit;
+        const where = {};
+        if (productId && typeof productId === 'string') {
+            where.productId = productId;
+        }
         const [reviews, total] = await Promise.all([
-            await this.prisma.review.findMany({
-                where: { productId },
+            this.prisma.review.findMany({
+                where,
                 skip: offset,
                 take: limit,
             }),
-            this.prisma.review.count({ where: { productId } }),
+            this.prisma.review.count({ where }),
         ]);
         return {
             reviews,

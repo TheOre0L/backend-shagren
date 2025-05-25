@@ -52,7 +52,9 @@ export class CategoryProductService {
   async get(action: 'all' | 'one', categoryId?: UUID) {
     switch (action) {
       case 'all': {
-        return await this.prisma.category.findMany();
+        return await this.prisma.category.findMany({
+          include: { product: { select: { images: true } } },
+        });
       }
       case 'one': {
         const categoryes = await this.prisma.category.findUnique({

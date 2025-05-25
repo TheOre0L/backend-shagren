@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Get, Query, Req, UseGuards } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { AccessTokenGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Request } from 'express';
@@ -33,5 +33,19 @@ export class NotificationController {
     },
   ) {
     return this.notificationService.getCount(req.user.userId);
+  }
+
+  @Delete()
+  @UseGuards(AccessTokenGuard)
+  async delete(
+    @Req()
+    req: Request & {
+      user: {
+        userId: string;
+      };
+    },
+    @Query('id') id?: string,
+  ) {
+    return this.notificationService.delete(req.user.userId, id || '');
   }
 }

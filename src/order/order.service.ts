@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
@@ -7,8 +8,10 @@ import { Response } from 'express';
 
 import { PrismaService } from 'nestjs-prisma';
 import { CdekService } from 'src/cdek/cdek.service';
+import { NotificationService } from 'src/notification/notification.service';
 import { CurrencyEnum, PaymentMethodsEnum } from 'src/payment/external';
 import { PaymentService } from 'src/payment/payment.service';
+import { OrderStatus, OrderStatusTitles } from './types/status';
 
 @Injectable()
 export class OrderService {
@@ -16,6 +19,7 @@ export class OrderService {
     private prisma: PrismaService,
     private readonly cdek: CdekService,
     private readonly payment: PaymentService,
+    private readonly notification: NotificationService,
   ) {}
 
   // Создать заказ из корзины
@@ -60,16 +64,30 @@ export class OrderService {
           },
         },
       });
-
+      await Promise.all(
+        cart.cartItems.map((item) =>
+          this.prisma.product.update({
+            where: { id: item.productId },
+            data: {
+              count: {
+                decrement: item.quantity,
+              },
+            },
+          }),
+        ),
+      );
       // Оплата
       const paymentA = await this.payment.createPayment({
-        amount: { value: totalSum, currency: CurrencyEnum.RUB },
+        amount: {
+          value: totalSum + body.rate.delivery_sum,
+          currency: CurrencyEnum.RUB,
+        },
         description: `Оплата заказа №${order.id}, пользователь ${userId}`,
         payment_method_data: { type: PaymentMethodsEnum.yoo_money },
         capture: true,
         confirmation: {
           type: 'redirect',
-          return_url: 'http://localhost:3000/',
+          return_url: 'https://shagren.shop/thank',
         },
         metadata: { order_id: order.id },
       });
@@ -184,13 +202,112 @@ export class OrderService {
   }
 
   // Отменить заказ
+  async updateOrder(orderId: string, status: string) {
+    const order = await this.prisma.order.update({
+      where: { id: orderId },
+      data: { status: status },
+      include: { orderItems: { include: { product: true } } },
+    });
+    if (status === 'delivered') {
+      for (const item of order.orderItems) {
+        await this.notification.create(
+          {
+            text: `Статус заказа #${orderId} с товаром "${item.product.title}" был доставлен, оцените его! Получите его в ПВЗ.`,
+            link: `https://shagren.shop/review/${item.productId}`,
+            title: 'Заказ доставлен!',
+            date: new Date(),
+            user: {
+              connect: { id: order.userId },
+            },
+          },
+          order.userId,
+        );
+      }
+    }
+
+    return await this.prisma.order.findMany({
+      orderBy: { createdAt: 'desc' }, // Сортируем от новых к старым
+      include: {
+        orderItems: {
+          include: {
+            product: true,
+          },
+        },
+        payment: true,
+        delivery: true,
+      },
+    });
+  }
+
   async cancelOrder(orderId: string) {
-    return this.prisma.order.delete({ where: { id: orderId } });
+    const order = await this.prisma.order.findFirstOrThrow({
+      where: { id: orderId },
+      include: { payment: true, delivery: true },
+    });
+
+    const payment = order.payment;
+
+    if (payment) {
+      await this.payment.refundPayment({
+        payment_id: payment.yooKassaId,
+        description: `Возврат денег за отмену заказа #${orderId}`,
+      });
+    }
+
+    await this.notification.create(
+      {
+        text: `Заказ #${orderId} был отменен! Деньги были возвращены.`,
+        link: 'https://shagren.shop/profile',
+        title: 'Заказ отменён!',
+        date: new Date(),
+        user: {
+          connect: {
+            id: order.userId,
+          },
+        },
+      },
+      order.userId,
+    );
+
+    return this.prisma.order.update({
+      where: { id: orderId },
+      data: { status: 'cancelled' },
+    });
   }
 
   async getStats() {
     try {
-      const stats = await this.prisma.category.findMany({
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+      // Получаем заказы за последний месяц
+      const orders = await this.prisma.order.findMany({
+        where: {
+          createdAt: {
+            gte: oneMonthAgo,
+          },
+        },
+        select: {
+          id: true,
+          summa: true,
+          orderItems: {
+            select: {
+              productId: true,
+              quantity: true,
+            },
+          },
+        },
+      });
+
+      const totalRevenue = orders.reduce(
+        (sum, order) => sum + Number(order.summa),
+        0,
+      );
+      const totalOrders = orders.length;
+      const averageCheck = totalOrders === 0 ? 0 : totalRevenue / totalOrders;
+
+      // Статистика по категориям за последний месяц
+      const categories = await this.prisma.category.findMany({
         select: {
           id: true,
           title: true,
@@ -199,6 +316,13 @@ export class OrderService {
               id: true,
               title: true,
               orderItems: {
+                where: {
+                  order: {
+                    createdAt: {
+                      gte: oneMonthAgo,
+                    },
+                  },
+                },
                 select: {
                   quantity: true,
                 },
@@ -208,7 +332,7 @@ export class OrderService {
         },
       });
 
-      const result = stats.map((category) => {
+      const categoryStats = categories.map((category) => {
         const totalSales = category.product.reduce((sum, product) => {
           const productSales = product.orderItems.reduce(
             (acc, item) => acc + item.quantity,
@@ -224,7 +348,12 @@ export class OrderService {
         };
       });
 
-      return result;
+      return {
+        totalRevenue,
+        totalOrders,
+        averageCheck,
+        result: categoryStats,
+      };
     } catch (error) {
       console.error(error);
       throw new BadRequestException('Ошибка при получении статистики');

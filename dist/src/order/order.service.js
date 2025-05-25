@@ -13,16 +13,19 @@ exports.OrderService = void 0;
 const common_1 = require("@nestjs/common");
 const nestjs_prisma_1 = require("nestjs-prisma");
 const cdek_service_1 = require("../cdek/cdek.service");
+const notification_service_1 = require("../notification/notification.service");
 const external_1 = require("../payment/external");
 const payment_service_1 = require("../payment/payment.service");
 let OrderService = class OrderService {
     prisma;
     cdek;
     payment;
-    constructor(prisma, cdek, payment) {
+    notification;
+    constructor(prisma, cdek, payment, notification) {
         this.prisma = prisma;
         this.cdek = cdek;
         this.payment = payment;
+        this.notification = notification;
     }
     async createOrderFromCart(userId, body, res) {
         try {
@@ -57,14 +60,25 @@ let OrderService = class OrderService {
                     },
                 },
             });
+            await Promise.all(cart.cartItems.map((item) => this.prisma.product.update({
+                where: { id: item.productId },
+                data: {
+                    count: {
+                        decrement: item.quantity,
+                    },
+                },
+            })));
             const paymentA = await this.payment.createPayment({
-                amount: { value: totalSum, currency: external_1.CurrencyEnum.RUB },
+                amount: {
+                    value: totalSum + body.rate.delivery_sum,
+                    currency: external_1.CurrencyEnum.RUB,
+                },
                 description: `Оплата заказа №${order.id}, пользователь ${userId}`,
                 payment_method_data: { type: external_1.PaymentMethodsEnum.yoo_money },
                 capture: true,
                 confirmation: {
                     type: 'redirect',
-                    return_url: 'http://localhost:3000/',
+                    return_url: 'https://shagren.shop/thank',
                 },
                 metadata: { order_id: order.id },
             });
@@ -160,12 +174,91 @@ let OrderService = class OrderService {
             },
         });
     }
+    async updateOrder(orderId, status) {
+        const order = await this.prisma.order.update({
+            where: { id: orderId },
+            data: { status: status },
+            include: { orderItems: { include: { product: true } } },
+        });
+        if (status === 'delivered') {
+            for (const item of order.orderItems) {
+                await this.notification.create({
+                    text: `Статус заказа #${orderId} с товаром "${item.product.title}" был доставлен, оцените его! Получите его в ПВЗ.`,
+                    link: `https://shagren.shop/review/${item.productId}`,
+                    title: 'Заказ доставлен!',
+                    date: new Date(),
+                    user: {
+                        connect: { id: order.userId },
+                    },
+                }, order.userId);
+            }
+        }
+        return await this.prisma.order.findMany({
+            orderBy: { createdAt: 'desc' },
+            include: {
+                orderItems: {
+                    include: {
+                        product: true,
+                    },
+                },
+                payment: true,
+                delivery: true,
+            },
+        });
+    }
     async cancelOrder(orderId) {
-        return this.prisma.order.delete({ where: { id: orderId } });
+        const order = await this.prisma.order.findFirstOrThrow({
+            where: { id: orderId },
+            include: { payment: true, delivery: true },
+        });
+        const payment = order.payment;
+        if (payment) {
+            await this.payment.refundPayment({
+                payment_id: payment.yooKassaId,
+                description: `Возврат денег за отмену заказа #${orderId}`,
+            });
+        }
+        await this.notification.create({
+            text: `Заказ #${orderId} был отменен! Деньги были возвращены.`,
+            link: 'https://shagren.shop/profile',
+            title: 'Заказ отменён!',
+            date: new Date(),
+            user: {
+                connect: {
+                    id: order.userId,
+                },
+            },
+        }, order.userId);
+        return this.prisma.order.update({
+            where: { id: orderId },
+            data: { status: 'cancelled' },
+        });
     }
     async getStats() {
         try {
-            const stats = await this.prisma.category.findMany({
+            const oneMonthAgo = new Date();
+            oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+            const orders = await this.prisma.order.findMany({
+                where: {
+                    createdAt: {
+                        gte: oneMonthAgo,
+                    },
+                },
+                select: {
+                    id: true,
+                    summa: true,
+                    orderItems: {
+                        select: {
+                            productId: true,
+                            quantity: true,
+                        },
+                    },
+                },
+            });
+            const totalRevenue = orders.reduce((sum, order) => sum + Number(order.summa), 0);
+            const totalOrders = orders.length;
+            const averageCheck = totalOrders === 0 ? 0 : totalRevenue / totalOrders;
+            const categories = await this.prisma.category.findMany({
                 select: {
                     id: true,
                     title: true,
@@ -174,6 +267,13 @@ let OrderService = class OrderService {
                             id: true,
                             title: true,
                             orderItems: {
+                                where: {
+                                    order: {
+                                        createdAt: {
+                                            gte: oneMonthAgo,
+                                        },
+                                    },
+                                },
                                 select: {
                                     quantity: true,
                                 },
@@ -182,7 +282,7 @@ let OrderService = class OrderService {
                     },
                 },
             });
-            const result = stats.map((category) => {
+            const categoryStats = categories.map((category) => {
                 const totalSales = category.product.reduce((sum, product) => {
                     const productSales = product.orderItems.reduce((acc, item) => acc + item.quantity, 0);
                     return sum + productSales;
@@ -193,7 +293,12 @@ let OrderService = class OrderService {
                     totalSales,
                 };
             });
-            return result;
+            return {
+                totalRevenue,
+                totalOrders,
+                averageCheck,
+                result: categoryStats,
+            };
         }
         catch (error) {
             console.error(error);
@@ -206,6 +311,7 @@ exports.OrderService = OrderService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [nestjs_prisma_1.PrismaService,
         cdek_service_1.CdekService,
-        payment_service_1.PaymentService])
+        payment_service_1.PaymentService,
+        notification_service_1.NotificationService])
 ], OrderService);
 //# sourceMappingURL=order.service.js.map

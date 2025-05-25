@@ -12,13 +12,14 @@ const order_controller_1 = require("./order.controller");
 const order_service_1 = require("./order.service");
 const cdek_service_1 = require("../cdek/cdek.service");
 const payment_service_1 = require("../payment/payment.service");
+const notification_service_1 = require("../notification/notification.service");
 let OrderModule = class OrderModule {
 };
 exports.OrderModule = OrderModule;
 exports.OrderModule = OrderModule = __decorate([
     (0, common_1.Module)({
         controllers: [order_controller_1.OrderController],
-        providers: [order_service_1.OrderService, cdek_service_1.CdekService, payment_service_1.PaymentService],
+        providers: [order_service_1.OrderService, cdek_service_1.CdekService, payment_service_1.PaymentService, notification_service_1.NotificationService],
     })
 ], OrderModule);
 //# sourceMappingURL=order.module.js.map

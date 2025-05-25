@@ -22,7 +22,7 @@ export class CreateUserDto {
   @IsString({ message: 'Введённое значение не является строкой.' })
   @Length(2, 100, { message: 'ФИО должно содержать от 2 до 100 символов.' })
   @IsNotEmpty({ message: 'Указываемое значение не должно быть пустым.' })
-  name: string;
+  fio: string;
 
   /*
     Пароль пользователя
@@ -55,7 +55,7 @@ export class CreateUserDto {
     message: 'Номер телефона должен соответсвовать формату - +79283000001',
   })
   @IsNotEmpty({ message: 'Указываемое значение не должно быть пустым.' })
-  phone: string;
+  telephone: string;
 
   /*
     EMAIL
@@ -101,3 +101,119 @@ export class CreateUserDto {
 }
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {}
+
+export class LoginDTO {
+  /*
+    EMAIL
+  */
+
+  @ApiProperty({
+    description: 'E-mail пользователя',
+    example: 'example@example.com',
+    type: 'string',
+  })
+  @IsString({ message: 'Введённое значение не является строкой.' })
+  @IsNotEmpty({ message: 'Указываемое значение не должно быть пустым.' })
+  @IsEmail(
+    {},
+    { message: 'Указанное значение не является адресом электронной почты.' },
+  )
+  email: string;
+
+  /*
+    Пароль пользователя
+  */
+
+  @ApiProperty({
+    description: 'Пароль пользователя',
+    required: true,
+    example: 'Qwerty123@',
+    type: 'string',
+  })
+  @IsString({ message: 'Введённое значение не является строкой.' })
+  @Length(6, 32, {
+    message: 'Длина пароля должна быть не меньше 6 и не больше 32 символов.',
+  })
+  @IsNotEmpty({ message: 'Указываемое значение не должно быть пустым.' })
+  password: string;
+}
+
+export class RegistrationDTO {
+  /*
+    ФИО пользователя
+  */
+
+  @ApiProperty({
+    description: 'ФИО пользователя',
+    required: true,
+    example: 'Петров Пётр Петрович',
+    type: 'string',
+  })
+  @IsString({ message: 'Введённое значение не является строкой.' })
+  @Length(2, 100, { message: 'ФИО должно содержать от 2 до 100 символов.' })
+  @IsNotEmpty({ message: 'Указываемое значение не должно быть пустым.' })
+  fio: string;
+
+  /*
+    Пароль пользователя
+  */
+
+  @ApiProperty({
+    description: 'Пароль пользователя',
+    required: true,
+    example: 'Qwerty123@',
+    type: 'string',
+  })
+  @IsString({ message: 'Введённое значение не является строкой.' })
+  @Length(6, 32, {
+    message: 'Длина пароля должна быть не меньше 6 и не больше 32 символов.',
+  })
+  @IsNotEmpty({ message: 'Указываемое значение не должно быть пустым.' })
+  password: string;
+
+  /*
+    Телефон пользователя
+  */
+
+  @ApiProperty({
+    description: 'Номер телефона пользователя',
+    required: true,
+    example: '+79283000001',
+    type: 'string',
+  })
+  @IsPhoneNumber('RU', {
+    message: 'Номер телефона должен соответсвовать формату - +79283000001',
+  })
+  @IsNotEmpty({ message: 'Указываемое значение не должно быть пустым.' })
+  telephone: string;
+
+  /*
+    EMAIL
+  */
+
+  @ApiProperty({
+    description: 'E-mail пользователя',
+    example: 'example@example.com',
+    type: 'string',
+  })
+  @IsString({ message: 'Введённое значение не является строкой.' })
+  @IsNotEmpty({ message: 'Указываемое значение не должно быть пустым.' })
+  @IsEmail(
+    {},
+    { message: 'Указанное значение не является адресом электронной почты.' },
+  )
+  email: string;
+
+  /*
+    Город
+  */
+
+  @ApiProperty({
+    description: 'Город пользователя',
+    example: 'Москва',
+    type: 'string',
+  })
+  @IsString({ message: 'Введённое значение не является строкой.' })
+  @IsNotEmpty({ message: 'Указываемое значение не должно быть пустым.' })
+  city: string;
+}
