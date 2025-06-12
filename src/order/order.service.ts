@@ -252,6 +252,10 @@ export class OrderService {
         payment_id: payment.yooKassaId,
         description: `Возврат денег за отмену заказа #${orderId}`,
       });
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: { status: 'cancelled' },
+      });
     }
 
     await this.notification.create(
@@ -272,6 +276,10 @@ export class OrderService {
     return this.prisma.order.update({
       where: { id: orderId },
       data: { status: 'cancelled' },
+      include: {
+        payment: true,
+        delivery: true,
+      },
     });
   }
 
